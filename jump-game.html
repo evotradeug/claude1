@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JUMP MASTER</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            font-family: Arial, sans-serif;
+        }
+
+        #gameCanvas {
+            border: 5px solid white;
+            box-shadow: 0 0 50px rgba(0, 0, 0, 0.5);
+            background: linear-gradient(180deg, #87CEEB 0%, #98D8E8 100%);
+        }
+
+        #ui {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: white;
+            font-size: 32px;
+            font-weight: bold;
+            text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.8);
+            z-index: 10;
+        }
+
+        #startScreen {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.9);
+            padding: 50px;
+            border-radius: 20px;
+            text-align: center;
+            color: white;
+            z-index: 100;
+        }
+
+        #startScreen.hidden {
+            display: none;
+        }
+
+        h1 {
+            font-size: 64px;
+            margin-bottom: 20px;
+            color: #ffd700;
+            text-shadow: 0 0 20px #ffd700;
+        }
+
+        .controls {
+            font-size: 24px;
+            margin: 30px 0;
+            line-height: 1.8;
+        }
+
+        button {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border: none;
+            color: white;
+            padding: 20px 60px;
+            font-size: 32px;
+            border-radius: 50px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: transform 0.3s;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        }
+
+        button:hover {
+            transform: scale(1.1);
+        }
+
+        button:active {
+            transform: scale(0.95);
+        }
+    </style>
+</head>
+<body>
+    <div id="startScreen">
+        <h1>🎮 JUMP MASTER</h1>
+        <div class="controls">
+            Press SPACE or ↑ to JUMP<br>
+            Avoid obstacles!<br>
+            Get coins for points!
+        </div>
+        <button onclick="startGame()">START</button>
+    </div>
+
+    <div id="ui">
+        SCORE: <span id="score">0</span>
+    </div>
+
+    <canvas id="gameCanvas" width="1000" height="600"></canvas>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        let gameRunning = false;
+        let score = 0;
+        let gameSpeed = 5;
+        let frameCount = 0;
+
+        // Player
+        const player = {
+            x: 100,
+            y: 400,
+            width: 40,
+            height: 40,
+            velocityY: 0,
+            jumping: false,
+            gravity: 0.8,
+            jumpPower: -15,
+            color: '#ff6b6b'
+        };
+
+        // Ground
+        const ground = {
+            y: 450,
+            height: 150,
+            color: '#2ecc71'
+        };
+
+        // Obstacles
+        let obstacles = [];
+        let coins = [];
+        let clouds = [];
+        let particles = [];
+
+        // Initialize clouds
+        for (let i = 0; i < 5; i++) {
+            clouds.push({
+                x: Math.random() * canvas.width,
+                y: Math.random() * 200,
+                width: 80 + Math.random() * 40,
+                speed: 0.5 + Math.random() * 0.5
+            });
+        }
+
+        // Controls
+        document.addEventListener('keydown', (e) => {
+            if ((e.code === 'Space' || e.code === 'ArrowUp') && gameRunning) {
+                e.preventDefault();
+                jump();
+            }
+        });
+
+        canvas.addEventListener('click', () => {
+            if (gameRunning) jump();
+        });
+
+        function jump() {
+            if (!player.jumping) {
+                player.velocityY = player.jumpPower;
+                player.jumping = true;
+            }
+        }
+
+        function startGame() {
+            document.getElementById('startScreen').classList.add('hidden');
+            gameRunning = true;
+            score = 0;
+            gameSpeed = 5;
+            obstacles = [];
+            coins = [];
+            particles = [];
+            player.y = 400;
+            player.velocityY = 0;
+            player.jumping = false;
+            gameLoop();
+        }
+
+        function spawnObstacle() {
+            const type = Math.random();
+            if (type < 0.4) {
+                // Cactus
+                obstacles.push({
+                    x: canvas.width,
+                    y: ground.y - 60,
+                    width: 40,
+                    height: 60,
+                    type: 'cactus',
+                    color: '#27ae60'
+                });
+            } else if (type < 0.7) {
+                // Rock
+                obstacles.push({
+                    x: canvas.width,
+                    y: ground.y - 40,
+                    width: 50,
+                    height: 40,
+                    type: 'rock',
+                    color: '#7f8c8d'
+                });
+            } else {
+                // Bird (flies high)
+                obstacles.push({
+                    x: canvas.width,
+                    y: ground.y - 150,
+                    width: 50,
+                    height: 30,
+                    type: 'bird',
+                    color: '#e67e22',
+                    wingFlap: 0
+                });
+            }
+        }
+
+        function spawnCoin() {
+            const height = ground.y - 100 - Math.random() * 150;
+            coins.push({
+                x: canvas.width,
+                y: height,
+                width: 30,
+                height: 30,
+                collected: false,
+                rotation: 0
+            });
+        }
+
+        function createParticles(x, y, color) {
+            for (let i = 0; i < 10; i++) {
+                particles.push({
+                    x: x,
+                    y: y,
+                    vx: (Math.random() - 0.5) * 8,
+                    vy: (Math.random() - 0.5) * 8,
+                    size: Math.random() * 5 + 2,
+                    color: color,
+                    life: 30
+                });
+            }
+        }
+
+        function drawPlayer() {
+            // Body
+            ctx.fillStyle = player.color;
+            ctx.fillRect(player.x, player.y, player.width, player.height);
+
+            // Eyes
+            ctx.fillStyle = 'white';
+            ctx.fillRect(player.x + 8, player.y + 10, 8, 8);
+            ctx.fillRect(player.x + 24, player.y + 10, 8, 8);
+
+            // Pupils
+            ctx.fillStyle = 'black';
+            ctx.fillRect(player.x + 12, player.y + 14, 4, 4);
+            ctx.fillRect(player.x + 28, player.y + 14, 4, 4);
+
+            // Mouth
+            ctx.fillStyle = 'black';
+            ctx.fillRect(player.x + 10, player.y + 28, 20, 3);
+        }
+
+        function drawGround() {
+            // Grass
+            ctx.fillStyle = ground.color;
+            ctx.fillRect(0, ground.y, canvas.width, ground.height);
+
+            // Dirt
+            ctx.fillStyle = '#8b4513';
+            ctx.fillRect(0, ground.y + 30, canvas.width, ground.height - 30);
+
+            // Grass blades
+            ctx.fillStyle = '#27ae60';
+            for (let i = 0; i < canvas.width; i += 20) {
+                const offset = (frameCount + i) % 20;
+                ctx.fillRect(i - offset, ground.y - 5, 3, 10);
+                ctx.fillRect(i - offset + 7, ground.y - 8, 3, 13);
+                ctx.fillRect(i - offset + 14, ground.y - 6, 3, 11);
+            }
+        }
+
+        function drawClouds() {
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+            clouds.forEach(cloud => {
+                // Cloud made of circles
+                ctx.beginPath();
+                ctx.arc(cloud.x, cloud.y, cloud.width / 3, 0, Math.PI * 2);
+                ctx.arc(cloud.x + cloud.width / 3, cloud.y - 10, cloud.width / 2.5, 0, Math.PI * 2);
+                ctx.arc(cloud.x + cloud.width / 1.5, cloud.y, cloud.width / 3, 0, Math.PI * 2);
+                ctx.fill();
+
+                cloud.x -= cloud.speed;
+                if (cloud.x + cloud.width < 0) {
+                    cloud.x = canvas.width;
+                    cloud.y = Math.random() * 200;
+                }
+            });
+        }
+
+        function drawObstacles() {
+            obstacles.forEach((obs, index) => {
+                if (obs.type === 'cactus') {
+                    // Cactus
+                    ctx.fillStyle = obs.color;
+                    ctx.fillRect(obs.x + 10, obs.y, 20, obs.height);
+                    ctx.fillRect(obs.x, obs.y + 20, 10, 20);
+                    ctx.fillRect(obs.x + 30, obs.y + 25, 10, 15);
+
+                    // Needles
+                    ctx.fillStyle = '#1e8449';
+                    for (let i = 0; i < 5; i++) {
+                        ctx.fillRect(obs.x + 8, obs.y + i * 12, 2, 6);
+                        ctx.fillRect(obs.x + 30, obs.y + i * 12, 2, 6);
+                    }
+                } else if (obs.type === 'rock') {
+                    // Rock
+                    ctx.fillStyle = obs.color;
+                    ctx.beginPath();
+                    ctx.moveTo(obs.x + obs.width / 2, obs.y);
+                    ctx.lineTo(obs.x + obs.width, obs.y + obs.height / 2);
+                    ctx.lineTo(obs.x + obs.width * 0.8, obs.y + obs.height);
+                    ctx.lineTo(obs.x + obs.width * 0.2, obs.y + obs.height);
+                    ctx.lineTo(obs.x, obs.y + obs.height / 2);
+                    ctx.closePath();
+                    ctx.fill();
+
+                    // Rock details
+                    ctx.fillStyle = '#95a5a6';
+                    ctx.fillRect(obs.x + 10, obs.y + 15, 15, 10);
+                } else if (obs.type === 'bird') {
+                    // Bird
+                    obs.wingFlap += 0.2;
+                    const wing = Math.sin(obs.wingFlap) * 10;
+
+                    ctx.fillStyle = obs.color;
+                    // Body
+                    ctx.fillRect(obs.x + 15, obs.y + 10, 20, 10);
+                    // Head
+                    ctx.fillRect(obs.x + 30, obs.y + 8, 12, 12);
+                    // Beak
+                    ctx.fillStyle = '#f39c12';
+                    ctx.fillRect(obs.x + 42, obs.y + 12, 6, 4);
+                    // Wings
+                    ctx.fillStyle = obs.color;
+                    ctx.fillRect(obs.x + 10, obs.y + wing, 15, 5);
+                    ctx.fillRect(obs.x + 25, obs.y - wing, 15, 5);
+                }
+
+                obs.x -= gameSpeed;
+
+                // Check collision
+                if (checkCollision(player, obs)) {
+                    gameOver();
+                }
+
+                // Remove off-screen obstacles
+                if (obs.x + obs.width < 0) {
+                    obstacles.splice(index, 1);
+                    score += 10;
+                    updateScore();
+                }
+            });
+        }
+
+        function drawCoins() {
+            coins.forEach((coin, index) => {
+                if (!coin.collected) {
+                    coin.rotation += 0.1;
+
+                    // Draw rotating coin
+                    ctx.save();
+                    ctx.translate(coin.x + coin.width / 2, coin.y + coin.height / 2);
+                    ctx.rotate(coin.rotation);
+
+                    // Coin
+                    const scale = Math.abs(Math.cos(coin.rotation));
+                    ctx.fillStyle = '#ffd700';
+                    ctx.fillRect(-coin.width / 2 * scale, -coin.height / 2, coin.width * scale, coin.height);
+
+                    // Shine
+                    ctx.fillStyle = '#ffed4e';
+                    ctx.fillRect(-5 * scale, -8, 10 * scale, 5);
+
+                    ctx.restore();
+
+                    coin.x -= gameSpeed;
+
+                    // Check collection
+                    if (checkCollision(player, coin)) {
+                        coin.collected = true;
+                        score += 50;
+                        updateScore();
+                        createParticles(coin.x + coin.width / 2, coin.y + coin.height / 2, '#ffd700');
+                    }
+
+                    // Remove off-screen coins
+                    if (coin.x + coin.width < 0) {
+                        coins.splice(index, 1);
+                    }
+                }
+            });
+        }
+
+        function drawParticles() {
+            particles.forEach((p, index) => {
+                ctx.fillStyle = p.color;
+                ctx.globalAlpha = p.life / 30;
+                ctx.fillRect(p.x, p.y, p.size, p.size);
+                ctx.globalAlpha = 1;
+
+                p.x += p.vx;
+                p.y += p.vy;
+                p.vy += 0.3; // Gravity
+                p.life--;
+
+                if (p.life <= 0) {
+                    particles.splice(index, 1);
+                }
+            });
+        }
+
+        function checkCollision(rect1, rect2) {
+            return rect1.x < rect2.x + rect2.width &&
+                   rect1.x + rect1.width > rect2.x &&
+                   rect1.y < rect2.y + rect2.height &&
+                   rect1.y + rect1.height > rect2.y;
+        }
+
+        function updateScore() {
+            document.getElementById('score').textContent = score;
+
+            // Increase difficulty
+            if (score % 200 === 0) {
+                gameSpeed += 0.5;
+            }
+        }
+
+        function gameOver() {
+            gameRunning = false;
+            createParticles(player.x + player.width / 2, player.y + player.height / 2, '#ff0000');
+
+            setTimeout(() => {
+                alert(`Game Over! Final Score: ${score}`);
+                document.getElementById('startScreen').classList.remove('hidden');
+            }, 500);
+        }
+
+        function gameLoop() {
+            if (!gameRunning) return;
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Draw sky gradient
+            const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+            gradient.addColorStop(0, '#87CEEB');
+            gradient.addColorStop(1, '#98D8E8');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            drawClouds();
+            drawGround();
+            drawObstacles();
+            drawCoins();
+            drawParticles();
+            drawPlayer();
+
+            // Player physics
+            player.velocityY += player.gravity;
+            player.y += player.velocityY;
+
+            // Ground collision
+            if (player.y + player.height >= ground.y) {
+                player.y = ground.y - player.height;
+                player.velocityY = 0;
+                player.jumping = false;
+            }
+
+            // Spawn obstacles
+            frameCount++;
+            if (frameCount % 120 === 0) {
+                spawnObstacle();
+            }
+
+            // Spawn coins
+            if (frameCount % 180 === 0) {
+                spawnCoin();
+            }
+
+            requestAnimationFrame(gameLoop);
+        }
+    </script>
+</body>
+</html>
