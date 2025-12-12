@@ -1,0 +1,1230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Lord of the Rings: The Quest for Middle-earth</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=MedievalSharp&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(135deg, #1a1a1a 0%, #2d1810 100%);
+            font-family: 'Cinzel', serif;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            color: #d4af37;
+        }
+
+        #gameContainer {
+            width: 1200px;
+            height: 700px;
+            background: linear-gradient(180deg, #0a0a0a 0%, #1a0f0a 100%);
+            border: 5px solid #d4af37;
+            box-shadow: 0 0 50px rgba(212, 175, 55, 0.5),
+                        inset 0 0 100px rgba(0, 0, 0, 0.8);
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Title Screen */
+        #titleScreen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background:
+                linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.7)),
+                url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 700"><rect fill="%231a0f0a"/><circle cx="600" cy="350" r="200" fill="%23d4af37" opacity="0.1"/></svg>');
+            background-size: cover;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        #titleScreen.hidden {
+            display: none;
+        }
+
+        .title {
+            font-size: 64px;
+            font-family: 'MedievalSharp', cursive;
+            color: #d4af37;
+            text-shadow:
+                0 0 20px #d4af37,
+                0 0 40px #d4af37,
+                3px 3px 10px rgba(0, 0, 0, 0.8);
+            margin-bottom: 20px;
+            text-align: center;
+            animation: glow 3s ease-in-out infinite;
+        }
+
+        @keyframes glow {
+            0%, 100% { text-shadow: 0 0 20px #d4af37, 0 0 40px #d4af37, 3px 3px 10px rgba(0, 0, 0, 0.8); }
+            50% { text-shadow: 0 0 30px #d4af37, 0 0 60px #d4af37, 3px 3px 10px rgba(0, 0, 0, 0.8); }
+        }
+
+        .subtitle {
+            font-size: 28px;
+            color: #b8860b;
+            margin-bottom: 50px;
+            text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.8);
+        }
+
+        .menu-btn {
+            background: linear-gradient(135deg, #1a1a1a 0%, #2d1810 100%);
+            border: 3px solid #d4af37;
+            color: #d4af37;
+            padding: 20px 50px;
+            font-size: 24px;
+            margin: 10px;
+            cursor: pointer;
+            font-family: 'Cinzel', serif;
+            text-transform: uppercase;
+            transition: all 0.3s;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .menu-btn::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            background: rgba(212, 175, 55, 0.2);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+
+        .menu-btn:hover::before {
+            width: 300px;
+            height: 300px;
+        }
+
+        .menu-btn:hover {
+            border-color: #ffd700;
+            color: #ffd700;
+            box-shadow: 0 0 30px rgba(212, 175, 55, 0.8);
+            transform: translateY(-5px);
+        }
+
+        /* Game UI */
+        #gameUI {
+            display: none;
+            width: 100%;
+            height: 100%;
+            position: relative;
+        }
+
+        #gameUI.active {
+            display: block;
+        }
+
+        /* Story Panel */
+        #storyPanel {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 90%;
+            height: 80%;
+            background: linear-gradient(135deg, rgba(26, 15, 10, 0.95), rgba(10, 10, 10, 0.95));
+            border: 3px solid #d4af37;
+            border-radius: 10px;
+            padding: 40px;
+            display: none;
+            flex-direction: column;
+            box-shadow: 0 0 50px rgba(0, 0, 0, 0.9);
+        }
+
+        #storyPanel.active {
+            display: flex;
+        }
+
+        .chapter-title {
+            font-size: 36px;
+            color: #d4af37;
+            text-align: center;
+            margin-bottom: 30px;
+            font-family: 'MedievalSharp', cursive;
+            text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.8);
+        }
+
+        .story-text {
+            font-size: 20px;
+            line-height: 1.8;
+            color: #c9a961;
+            margin-bottom: 30px;
+            flex: 1;
+            overflow-y: auto;
+            text-align: justify;
+            padding-right: 20px;
+        }
+
+        .story-text::-webkit-scrollbar {
+            width: 10px;
+        }
+
+        .story-text::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.3);
+        }
+
+        .story-text::-webkit-scrollbar-thumb {
+            background: #d4af37;
+            border-radius: 5px;
+        }
+
+        .story-choices {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .choice-btn {
+            background: linear-gradient(135deg, #2d1810, #1a1a1a);
+            border: 2px solid #d4af37;
+            color: #d4af37;
+            padding: 15px 30px;
+            font-size: 18px;
+            cursor: pointer;
+            font-family: 'Cinzel', serif;
+            transition: all 0.3s;
+            border-radius: 5px;
+        }
+
+        .choice-btn:hover {
+            background: linear-gradient(135deg, #d4af37, #b8860b);
+            color: #000;
+            transform: scale(1.05);
+            box-shadow: 0 0 20px rgba(212, 175, 55, 0.6);
+        }
+
+        /* Combat Screen */
+        #combatScreen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(180deg, #0a0a0a, #1a0f0a);
+            display: none;
+            flex-direction: column;
+        }
+
+        #combatScreen.active {
+            display: flex;
+        }
+
+        .combat-header {
+            padding: 20px;
+            text-align: center;
+            font-size: 28px;
+            color: #d4af37;
+            background: rgba(0, 0, 0, 0.5);
+            border-bottom: 2px solid #d4af37;
+        }
+
+        .combat-area {
+            flex: 1;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            padding: 40px;
+        }
+
+        .character, .enemy {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .character-sprite, .enemy-sprite {
+            width: 200px;
+            height: 200px;
+            border: 3px solid #d4af37;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 80px;
+            background: linear-gradient(135deg, rgba(45, 24, 16, 0.8), rgba(26, 26, 26, 0.8));
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .character-sprite::before, .enemy-sprite::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(212, 175, 55, 0.1) 0%, transparent 70%);
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.1); opacity: 0.5; }
+        }
+
+        .health-bar-container {
+            width: 250px;
+            height: 30px;
+            background: rgba(0, 0, 0, 0.8);
+            border: 2px solid #d4af37;
+            border-radius: 5px;
+            overflow: hidden;
+        }
+
+        .health-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #ff0000, #ff6600, #ffcc00);
+            transition: width 0.5s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            font-weight: bold;
+            text-shadow: 1px 1px 3px #000;
+        }
+
+        .character-name, .enemy-name {
+            font-size: 24px;
+            color: #d4af37;
+            font-weight: bold;
+        }
+
+        .combat-actions {
+            padding: 30px;
+            background: rgba(0, 0, 0, 0.7);
+            border-top: 2px solid #d4af37;
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .action-btn {
+            background: linear-gradient(135deg, #2d1810, #1a1a1a);
+            border: 2px solid #d4af37;
+            color: #d4af37;
+            padding: 15px 40px;
+            font-size: 18px;
+            cursor: pointer;
+            font-family: 'Cinzel', serif;
+            transition: all 0.3s;
+            border-radius: 5px;
+            position: relative;
+        }
+
+        .action-btn:hover:not(:disabled) {
+            background: linear-gradient(135deg, #d4af37, #b8860b);
+            color: #000;
+            transform: scale(1.05);
+            box-shadow: 0 0 20px rgba(212, 175, 55, 0.6);
+        }
+
+        .action-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* Character Stats Panel */
+        #statsPanel {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            border: 2px solid #d4af37;
+            padding: 20px;
+            border-radius: 5px;
+            min-width: 250px;
+        }
+
+        .stat-line {
+            display: flex;
+            justify-content: space-between;
+            margin: 10px 0;
+            font-size: 16px;
+            color: #c9a961;
+        }
+
+        .stat-label {
+            font-weight: bold;
+            color: #d4af37;
+        }
+
+        /* Inventory */
+        #inventoryPanel {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            border: 2px solid #d4af37;
+            padding: 20px;
+            border-radius: 5px;
+            min-width: 250px;
+        }
+
+        .inventory-title {
+            font-size: 20px;
+            color: #d4af37;
+            margin-bottom: 15px;
+            text-align: center;
+            border-bottom: 1px solid #d4af37;
+            padding-bottom: 10px;
+        }
+
+        .inventory-item {
+            padding: 10px;
+            margin: 5px 0;
+            background: rgba(45, 24, 16, 0.5);
+            border: 1px solid #b8860b;
+            border-radius: 3px;
+            color: #c9a961;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .inventory-item:hover {
+            background: rgba(212, 175, 55, 0.2);
+            border-color: #d4af37;
+        }
+
+        /* Combat Log */
+        #combatLog {
+            position: absolute;
+            bottom: 120px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80%;
+            max-height: 100px;
+            background: rgba(0, 0, 0, 0.9);
+            border: 2px solid #d4af37;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-y: auto;
+            font-size: 14px;
+            color: #c9a961;
+        }
+
+        .log-entry {
+            margin: 5px 0;
+            padding: 3px 0;
+        }
+
+        .log-damage {
+            color: #ff6666;
+        }
+
+        .log-heal {
+            color: #66ff66;
+        }
+
+        .log-special {
+            color: #ffaa00;
+        }
+
+        /* Victory/Defeat Screen */
+        #resultScreen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.95);
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 500;
+        }
+
+        #resultScreen.active {
+            display: flex;
+        }
+
+        .result-title {
+            font-size: 72px;
+            margin-bottom: 30px;
+            font-family: 'MedievalSharp', cursive;
+            text-shadow: 0 0 30px currentColor;
+        }
+
+        .result-title.victory {
+            color: #ffd700;
+            animation: victoryGlow 2s ease-in-out infinite;
+        }
+
+        .result-title.defeat {
+            color: #ff0000;
+        }
+
+        @keyframes victoryGlow {
+            0%, 100% { text-shadow: 0 0 30px #ffd700; }
+            50% { text-shadow: 0 0 60px #ffd700; }
+        }
+
+        .result-text {
+            font-size: 24px;
+            color: #c9a961;
+            margin-bottom: 40px;
+            text-align: center;
+            max-width: 600px;
+        }
+
+        /* Loading Screen */
+        .loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 24px;
+            color: #d4af37;
+            text-align: center;
+        }
+
+        .loading::after {
+            content: '...';
+            animation: dots 1.5s steps(4, end) infinite;
+        }
+
+        @keyframes dots {
+            0%, 20% { content: '.'; }
+            40% { content: '..'; }
+            60%, 100% { content: '...'; }
+        }
+
+        /* Save/Load UI */
+        .save-info {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.8);
+            border: 2px solid #d4af37;
+            padding: 10px 20px;
+            border-radius: 5px;
+            color: #c9a961;
+            font-size: 14px;
+        }
+
+        /* Animations */
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-10px); }
+            75% { transform: translateX(10px); }
+        }
+
+        .shake {
+            animation: shake 0.5s;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.5s;
+        }
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <!-- Title Screen -->
+        <div id="titleScreen">
+            <h1 class="title">THE LORD OF THE RINGS</h1>
+            <p class="subtitle">The Quest for Middle-earth</p>
+            <button class="menu-btn" onclick="startNewGame()">New Adventure</button>
+            <button class="menu-btn" onclick="loadGame()">Continue Journey</button>
+            <button class="menu-btn" onclick="showCredits()">About</button>
+        </div>
+
+        <!-- Game UI -->
+        <div id="gameUI">
+            <!-- Stats Panel -->
+            <div id="statsPanel">
+                <div class="stat-line">
+                    <span class="stat-label">Character:</span>
+                    <span id="charName">Frodo</span>
+                </div>
+                <div class="stat-line">
+                    <span class="stat-label">Level:</span>
+                    <span id="charLevel">1</span>
+                </div>
+                <div class="stat-line">
+                    <span class="stat-label">XP:</span>
+                    <span id="charXP">0 / 100</span>
+                </div>
+                <div class="stat-line">
+                    <span class="stat-label">Attack:</span>
+                    <span id="charAttack">10</span>
+                </div>
+                <div class="stat-line">
+                    <span class="stat-label">Defense:</span>
+                    <span id="charDefense">5</span>
+                </div>
+                <div class="stat-line">
+                    <span class="stat-label">Chapter:</span>
+                    <span id="currentChapter">1</span>
+                </div>
+            </div>
+
+            <!-- Inventory Panel -->
+            <div id="inventoryPanel">
+                <div class="inventory-title">⚔️ Inventory ⚔️</div>
+                <div id="inventoryList">
+                    <div class="inventory-item">🍞 Lembas Bread x3</div>
+                    <div class="inventory-item">🗡️ Sting</div>
+                </div>
+            </div>
+
+            <!-- Story Panel -->
+            <div id="storyPanel">
+                <h2 class="chapter-title" id="chapterTitle">Chapter 1: The Shire</h2>
+                <div class="story-text" id="storyText">
+                    Your story begins...
+                </div>
+                <div class="story-choices" id="storyChoices">
+                    <!-- Choices will be added dynamically -->
+                </div>
+            </div>
+
+            <!-- Combat Screen -->
+            <div id="combatScreen">
+                <div class="combat-header" id="combatHeader">
+                    Battle in Progress
+                </div>
+
+                <div class="combat-area">
+                    <div class="character">
+                        <div class="character-sprite" id="playerSprite">🧙</div>
+                        <div class="character-name" id="playerName">Frodo</div>
+                        <div class="health-bar-container">
+                            <div class="health-bar" id="playerHealth" style="width: 100%;">
+                                <span id="playerHealthText">100 / 100</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="enemy">
+                        <div class="enemy-sprite" id="enemySprite">👹</div>
+                        <div class="enemy-name" id="enemyName">Orc</div>
+                        <div class="health-bar-container">
+                            <div class="health-bar" id="enemyHealth" style="width: 100%;">
+                                <span id="enemyHealthText">50 / 50</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="combatLog"></div>
+
+                <div class="combat-actions" id="combatActions">
+                    <button class="action-btn" onclick="playerAttack()">⚔️ Attack</button>
+                    <button class="action-btn" onclick="playerDefend()">🛡️ Defend</button>
+                    <button class="action-btn" onclick="useSpecialAbility()">✨ Special</button>
+                    <button class="action-btn" onclick="useItem()">🎒 Use Item</button>
+                    <button class="action-btn" onclick="attemptFlee()">🏃 Flee</button>
+                </div>
+            </div>
+
+            <!-- Result Screen -->
+            <div id="resultScreen">
+                <h2 class="result-title" id="resultTitle">Victory!</h2>
+                <p class="result-text" id="resultText">You have defeated the enemy!</p>
+                <button class="menu-btn" onclick="continueAfterCombat()">Continue</button>
+            </div>
+
+            <div class="save-info">
+                Game saves automatically | Chapter: <span id="saveChapter">1</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Game State
+        let gameState = {
+            player: {
+                name: 'Frodo',
+                sprite: '🧙',
+                level: 1,
+                xp: 0,
+                xpToNext: 100,
+                maxHealth: 100,
+                health: 100,
+                attack: 10,
+                defense: 5,
+                specialPower: 'Ring of Power',
+                specialCooldown: 0
+            },
+            inventory: [
+                { name: 'Lembas Bread', icon: '🍞', count: 3, type: 'healing', value: 30 },
+                { name: 'Sting', icon: '🗡️', count: 1, type: 'weapon', value: 5 }
+            ],
+            currentChapter: 0,
+            currentStoryBeat: 0,
+            enemiesDefeated: 0,
+            questsCompleted: [],
+            defeatedBosses: []
+        };
+
+        // Story Data
+        const storyChapters = [
+            {
+                title: "Chapter 1: The Shire",
+                beats: [
+                    {
+                        text: `The Shire. A land of peace and plenty, where hobbits live their quiet lives. But on this day, everything changes.\n\nGandalf the Grey has arrived with grave news. The ring you carry—the ring your uncle Bilbo left you—is no mere trinket. It is the One Ring, forged by the Dark Lord Sauron to control all of Middle-earth.\n\n"You must leave the Shire, Frodo," Gandalf says urgently. "The Enemy knows of the Ring. His servants, the Nazgûl, are already searching for it. You must take it to Rivendell, to the Elves. They will know what to do."\n\nYou feel the weight of the Ring in your pocket. Your peaceful life is ending, and a great quest begins.`,
+                        choices: [
+                            { text: "I will take the Ring to Rivendell", next: 1 },
+                            { text: "Why must I carry this burden?", next: 1 }
+                        ]
+                    },
+                    {
+                        text: `Gandalf places a hand on your shoulder. "I know this is not what you wanted, Frodo. But the Ring cannot stay in the Shire. Already, dark forces move against us. You must go, and quickly."\n\nSam, your loyal gardener and friend, bursts through the door. "I'm coming with you, Mr. Frodo! I promised Gandalf I'd look after you, and I mean to keep that promise!"\n\nYou gather your belongings: Sting, the Elven blade given to you by Bilbo, and some Lembas bread for the journey. As night falls, you slip away from Bag End, leaving the only home you've ever known.\n\nThe road ahead is long and dangerous...`,
+                        choices: [
+                            { text: "Take the road through the Old Forest", next: 2, combat: 'orcs' },
+                            { text: "Follow the main road toward Bree", next: 2, combat: 'orcs' }
+                        ]
+                    },
+                    {
+                        text: `You've barely left the Shire when you hear it—a horrible shriek that chills your blood. A Nazgûl! The Ring feels heavy, pulling at you, wanting to be found.\n\nFrom the shadows, you see movement. Orcs! They've been tracking you, serving the Dark Lord's will. There's no choice now—you must fight or be captured!\n\nSam draws his frying pan bravely. "Come on then! No one's taking Mr. Frodo while I'm around!"`,
+                        choices: [
+                            { text: "Stand and fight!", combat: true, enemy: 'orc_scout' }
+                        ]
+                    }
+                ]
+            },
+            {
+                title: "Chapter 2: The Journey to Bree",
+                beats: [
+                    {
+                        text: `The orcs lie defeated at your feet. You've proven yourself in your first real battle, though your hands still shake from the adrenaline.\n\n"Well done, Mr. Frodo!" Sam exclaims. "You handled Sting like a real warrior!"\n\nYou find some supplies on the orcs' bodies and press onward. The town of Bree is still days away, and you can feel eyes watching you from the darkness.\n\nAs you rest by a fire that night, you hear footsteps. A hooded figure emerges from the shadows—a Ranger, tall and weathered, with a sword at his side.\n\n"I am Strider," he says. "Gandalf sent me to find you. The Nazgûl are close. We must reach Rivendell quickly."`,
+                        choices: [
+                            { text: "Can we trust him?", next: 1 },
+                            { text: "We need all the help we can get", next: 1 }
+                        ]
+                    },
+                    {
+                        text: `Strider leads you through hidden paths, avoiding the main roads where the Enemy's servants patrol. His knowledge of the wild is unmatched, and you begin to feel safer in his presence.\n\nBut on the slopes of Weathertop, disaster strikes. The Nazgûl find you.\n\nNine black riders surround your camp, their presence a palpable evil. The Witch-king himself steps forward, his blade gleaming with dark magic.\n\n"Give us the Ring," the hollow voice commands. "Give it to us, and your suffering will end quickly."\n\nThe Ring burns against your chest, tempting you to put it on, to use its power...`,
+                        choices: [
+                            { text: "Resist the Ring's call", next: 2 },
+                            { text: "Fight the Nazgûl", combat: true, enemy: 'nazgul' }
+                        ]
+                    },
+                    {
+                        text: `With Strider's help, you fight off the Nazgûl, though not without cost. A Morgul blade wounds you, its poison beginning to spread through your body.\n\n"We must reach Rivendell!" Strider urges. "Only Elven magic can save you now!"\n\nYou ride hard for days, fevered and weak, the wound growing worse. Just as darkness begins to claim you, you hear a melodic voice and see a beautiful Elven maiden on a white horse.\n\n"I am Arwen," she says. "Give him to me. I will take him to my father in Rivendell."\n\nAs you slip into unconsciousness, you feel yourself being carried across a river, voices shouting behind you, and then... nothing.`,
+                        choices: [
+                            { text: "Rest and recover in Rivendell", next: 3 }
+                        ]
+                    },
+                    {
+                        text: `You wake in Rivendell, the Last Homely House. Your wound has been healed by Lord Elrond himself. Gandalf stands beside your bed, smiling.\n\n"You've made it, Frodo," he says. "But the journey is far from over. The Council of Elrond has convened. We must decide what to do with the Ring."\n\nYou've completed Chapter 2! You've gained experience and grown stronger. But greater challenges await...\n\n🎉 Chapter Complete! 🎉\nXP Gained: 500\nNew Item: Phial of Galadriel`,
+                        choices: [
+                            { text: "Continue to Chapter 3", next: 'chapter', nextChapter: 2 }
+                        ]
+                    }
+                ]
+            },
+            {
+                title: "Chapter 3: The Fellowship",
+                beats: [
+                    {
+                        text: `The Council of Elrond has gathered. Elves, Dwarves, Men, and Hobbits sit in a circle, debating the fate of the Ring.\n\n"The Ring must be destroyed," Elrond declares. "It must be taken to Mount Doom in Mordor and cast into the fires where it was made."\n\n"One of you must take this task upon you," Gandalf adds.\n\nBefore you can think, the words escape your lips: "I will take the Ring to Mordor... though I do not know the way."\n\nOne by one, others pledge to help you. Aragorn (Strider), Legolas the Elf, Gimli the Dwarf, Boromir of Gondor, and Gandalf himself. With Sam, Merry, and Pippin, you form the Fellowship of the Ring—nine companions against the darkness.`,
+                        choices: [
+                            { text: "The Fellowship sets out", next: 1 }
+                        ]
+                    },
+                    {
+                        text: `Your path leads through the Mines of Moria, an ancient Dwarven kingdom now fallen into darkness. As you traverse the endless halls, you sense you're being followed.\n\nSuddenly, drums in the deep. Boom... boom... BOOM!\n\n"Orcs!" Gimli shouts.\n\n"And something worse," Gandalf says grimly. "A Balrog. A demon of the ancient world."\n\nThe doors burst open. A massive horde of orcs and a Cave Troll charge toward you!\n\n"Stand together!" Aragorn commands. "For the Fellowship!"`,
+                        choices: [
+                            { text: "Fight the Cave Troll!", combat: true, enemy: 'cave_troll' }
+                        ]
+                    },
+                    {
+                        text: `You've defeated the Cave Troll, but there's no time to celebrate. From the depths comes a roar that shakes the very mountain—the Balrog approaches.\n\n"Fly, you fools!" Gandalf cries as he faces the demon on the Bridge of Khazad-dûm.\n\nYou run, tears streaming down your face, as Gandalf falls into shadow fighting the Balrog.\n\nThe Fellowship emerges in Lothlórien, the Golden Wood of the Elves. There, Lady Galadriel gives you gifts and guidance.\n\n"The quest stands upon the edge of a knife," she tells you. "Stray but a little, and it will fail. Yet hope remains while the Company is true."\n\n🎉 Chapter Complete! 🎉\nXP Gained: 800\nNew Ability: Courage of the Fellowship`,
+                        choices: [
+                            { text: "Continue to Chapter 4", next: 'chapter', nextChapter: 3 }
+                        ]
+                    }
+                ]
+            },
+            {
+                title: "Chapter 4: The Breaking of the Fellowship",
+                beats: [
+                    {
+                        text: `The Fellowship travels down the River Anduin, heading toward Mordor. But tensions are rising. Boromir eyes the Ring with increasing desire.\n\n"Why shouldn't we use it?" he argues. "One of us could wield it against Sauron! Save Gondor!"\n\n"The Ring cannot be used," Aragorn says firmly. "It will corrupt anyone who bears it."\n\nYou stop at Amon Hen to rest. As you wander alone, Boromir finds you.\n\n"Give me the Ring, Frodo," he pleads, his eyes wild. "I would use it for good! I would save my people!"\n\nHe lunges for it. You have no choice...`,
+                        choices: [
+                            { text: "Put on the Ring and escape", next: 1 },
+                            { text: "Flee without using the Ring", next: 1 }
+                        ]
+                    },
+                    {
+                        text: `Whether you used the Ring or not, you know what you must do. The Fellowship is breaking. The Ring's corruption is too strong. You must go on alone.\n\n"I'm going to Mordor alone," you tell Sam as you try to sneak away.\n\n"Of course you are," Sam says, wading into the river after you. "And I'm coming with you!"\n\nTogether, you set off toward the Black Land, leaving the others behind.\n\nBehind you, orcs attack. Boromir falls defending Merry and Pippin. Aragorn, Legolas, and Gimli give chase to save the hobbits.\n\nThe Fellowship has broken... but your quest continues.\n\n🎉 Chapter Complete! 🎉\nXP Gained: 1000\n\nYou've completed the first arc of your journey! More chapters and adventures await in the full game!`,
+                        choices: [
+                            { text: "Continue the Adventure", next: 'end' }
+                        ]
+                    }
+                ]
+            }
+        ];
+
+        // Enemy Data
+        const enemies = {
+            orc_scout: {
+                name: 'Orc Scout',
+                sprite: '👹',
+                health: 50,
+                maxHealth: 50,
+                attack: 8,
+                defense: 3,
+                xpReward: 50,
+                lootTable: [
+                    { name: 'Orc Blade', icon: '🗡️', chance: 0.3, type: 'weapon', value: 3 },
+                    { name: 'Health Potion', icon: '🧪', chance: 0.5, type: 'healing', value: 20 }
+                ]
+            },
+            nazgul: {
+                name: 'Nazgûl',
+                sprite: '💀',
+                health: 100,
+                maxHealth: 100,
+                attack: 15,
+                defense: 8,
+                xpReward: 200,
+                special: 'Fear Aura',
+                lootTable: [
+                    { name: 'Dark Essence', icon: '🌑', chance: 0.8, type: 'special', value: 10 }
+                ]
+            },
+            cave_troll: {
+                name: 'Cave Troll',
+                sprite: '🦍',
+                health: 150,
+                maxHealth: 150,
+                attack: 20,
+                defense: 10,
+                xpReward: 500,
+                lootTable: [
+                    { name: 'Troll Hide', icon: '🛡️', chance: 0.7, type: 'armor', value: 8 },
+                    { name: 'Greater Health Potion', icon: '🧪', chance: 0.9, type: 'healing', value: 50 }
+                ]
+            }
+        };
+
+        let currentEnemy = null;
+        let combatTurn = 'player';
+        let playerDefending = false;
+
+        // Initialize Game
+        function startNewGame() {
+            gameState = {
+                player: {
+                    name: 'Frodo',
+                    sprite: '🧙',
+                    level: 1,
+                    xp: 0,
+                    xpToNext: 100,
+                    maxHealth: 100,
+                    health: 100,
+                    attack: 10,
+                    defense: 5,
+                    specialPower: 'Ring of Power',
+                    specialCooldown: 0
+                },
+                inventory: [
+                    { name: 'Lembas Bread', icon: '🍞', count: 3, type: 'healing', value: 30 },
+                    { name: 'Sting', icon: '🗡️', count: 1, type: 'weapon', value: 5 }
+                ],
+                currentChapter: 0,
+                currentStoryBeat: 0,
+                enemiesDefeated: 0,
+                questsCompleted: [],
+                defeatedBosses: []
+            };
+
+            document.getElementById('titleScreen').classList.add('hidden');
+            document.getElementById('gameUI').classList.add('active');
+            updateUI();
+            showStory();
+        }
+
+        function loadGame() {
+            const saved = localStorage.getItem('lotrGameSave');
+            if (saved) {
+                gameState = JSON.parse(saved);
+                document.getElementById('titleScreen').classList.add('hidden');
+                document.getElementById('gameUI').classList.add('active');
+                updateUI();
+                showStory();
+            } else {
+                alert('No saved game found! Starting new adventure...');
+                startNewGame();
+            }
+        }
+
+        function saveGame() {
+            localStorage.setItem('lotrGameSave', JSON.stringify(gameState));
+            document.getElementById('saveChapter').textContent = gameState.currentChapter + 1;
+        }
+
+        function showCredits() {
+            alert('THE LORD OF THE RINGS: The Quest for Middle-earth\n\nA fan-made adventure game inspired by J.R.R. Tolkien\'s masterpiece.\n\nFeatures:\n• Epic story across multiple chapters\n• Turn-based combat system\n• Character progression & inventory\n• Boss battles\n• Auto-save functionality\n\nBuilt with passion for Middle-earth!\n\n"Even the smallest person can change the course of the future."');
+        }
+
+        // Story System
+        function showStory() {
+            const chapter = storyChapters[gameState.currentChapter];
+            const beat = chapter.beats[gameState.currentStoryBeat];
+
+            document.getElementById('storyPanel').classList.add('active');
+            document.getElementById('combatScreen').classList.remove('active');
+            document.getElementById('chapterTitle').textContent = chapter.title;
+            document.getElementById('storyText').textContent = beat.text;
+
+            const choicesContainer = document.getElementById('storyChoices');
+            choicesContainer.innerHTML = '';
+
+            beat.choices.forEach(choice => {
+                const btn = document.createElement('button');
+                btn.className = 'choice-btn';
+                btn.textContent = choice.text;
+                btn.onclick = () => handleChoice(choice);
+                choicesContainer.appendChild(btn);
+            });
+
+            saveGame();
+        }
+
+        function handleChoice(choice) {
+            if (choice.combat) {
+                startCombat(choice.enemy);
+            } else if (choice.next === 'chapter') {
+                // Move to next chapter
+                gameState.currentChapter = choice.nextChapter;
+                gameState.currentStoryBeat = 0;
+                showStory();
+            } else if (choice.next === 'end') {
+                showEndScreen();
+            } else {
+                gameState.currentStoryBeat = choice.next;
+                showStory();
+            }
+        }
+
+        function showEndScreen() {
+            document.getElementById('storyPanel').classList.remove('active');
+            document.getElementById('resultScreen').classList.add('active');
+            document.getElementById('resultTitle').textContent = 'To Be Continued...';
+            document.getElementById('resultTitle').className = 'result-title victory';
+            document.getElementById('resultText').textContent = 'You\'ve completed the demo chapters! The journey to Mount Doom continues... Your progress has been saved. More adventures await!';
+
+            const continueBtn = document.querySelector('#resultScreen .menu-btn');
+            continueBtn.textContent = 'Return to Title';
+            continueBtn.onclick = () => {
+                location.reload();
+            };
+        }
+
+        // Combat System
+        function startCombat(enemyType) {
+            currentEnemy = JSON.parse(JSON.stringify(enemies[enemyType]));
+            combatTurn = 'player';
+            playerDefending = false;
+
+            document.getElementById('storyPanel').classList.remove('active');
+            document.getElementById('combatScreen').classList.add('active');
+            document.getElementById('combatLog').innerHTML = '';
+
+            updateCombatUI();
+            addCombatLog(`A ${currentEnemy.name} appears!`, 'special');
+        }
+
+        function updateCombatUI() {
+            document.getElementById('combatHeader').textContent = `Battle: ${currentEnemy.name}`;
+            document.getElementById('playerSprite').textContent = gameState.player.sprite;
+            document.getElementById('playerName').textContent = gameState.player.name;
+            document.getElementById('enemySprite').textContent = currentEnemy.sprite;
+            document.getElementById('enemyName').textContent = currentEnemy.name;
+
+            updateHealthBars();
+        }
+
+        function updateHealthBars() {
+            const playerHealthPercent = (gameState.player.health / gameState.player.maxHealth) * 100;
+            document.getElementById('playerHealth').style.width = playerHealthPercent + '%';
+            document.getElementById('playerHealthText').textContent = `${gameState.player.health} / ${gameState.player.maxHealth}`;
+
+            const enemyHealthPercent = (currentEnemy.health / currentEnemy.maxHealth) * 100;
+            document.getElementById('enemyHealth').style.width = enemyHealthPercent + '%';
+            document.getElementById('enemyHealthText').textContent = `${currentEnemy.health} / ${currentEnemy.maxHealth}`;
+        }
+
+        function playerAttack() {
+            if (combatTurn !== 'player') return;
+
+            const damage = Math.max(1, gameState.player.attack - currentEnemy.defense + Math.floor(Math.random() * 5));
+            currentEnemy.health -= damage;
+
+            addCombatLog(`You attack for ${damage} damage!`, 'damage');
+            document.getElementById('enemySprite').classList.add('shake');
+            setTimeout(() => {
+                document.getElementById('enemySprite').classList.remove('shake');
+            }, 500);
+
+            updateHealthBars();
+            checkCombatEnd() || enemyTurn();
+        }
+
+        function playerDefend() {
+            if (combatTurn !== 'player') return;
+
+            playerDefending = true;
+            addCombatLog('You brace yourself for the next attack!', 'special');
+            enemyTurn();
+        }
+
+        function useSpecialAbility() {
+            if (combatTurn !== 'player') return;
+            if (gameState.player.specialCooldown > 0) {
+                addCombatLog(`Special ability on cooldown: ${gameState.player.specialCooldown} turns`, 'special');
+                return;
+            }
+
+            const damage = gameState.player.attack * 2;
+            currentEnemy.health -= damage;
+            gameState.player.specialCooldown = 3;
+
+            addCombatLog(`You use ${gameState.player.specialPower} for ${damage} damage!`, 'special');
+            document.getElementById('enemySprite').classList.add('shake');
+            setTimeout(() => {
+                document.getElementById('enemySprite').classList.remove('shake');
+            }, 500);
+
+            updateHealthBars();
+            checkCombatEnd() || enemyTurn();
+        }
+
+        function useItem() {
+            if (combatTurn !== 'player') return;
+
+            const healingItems = gameState.inventory.filter(item => item.type === 'healing' && item.count > 0);
+            if (healingItems.length === 0) {
+                addCombatLog('No healing items available!', 'special');
+                return;
+            }
+
+            const item = healingItems[0];
+            item.count--;
+            gameState.player.health = Math.min(gameState.player.maxHealth, gameState.player.health + item.value);
+
+            addCombatLog(`Used ${item.name}! Healed ${item.value} HP!`, 'heal');
+            updateHealthBars();
+            updateInventoryDisplay();
+
+            enemyTurn();
+        }
+
+        function attemptFlee() {
+            if (Math.random() < 0.5) {
+                addCombatLog('You successfully fled from battle!', 'special');
+                setTimeout(() => {
+                    endCombat(false);
+                }, 1500);
+            } else {
+                addCombatLog('Failed to flee!', 'damage');
+                enemyTurn();
+            }
+        }
+
+        function enemyTurn() {
+            combatTurn = 'enemy';
+
+            setTimeout(() => {
+                let damage = Math.max(1, currentEnemy.attack - gameState.player.defense);
+
+                if (playerDefending) {
+                    damage = Math.floor(damage / 2);
+                    playerDefending = false;
+                    addCombatLog(`${currentEnemy.name} attacks! Your defense reduces damage to ${damage}!`, 'damage');
+                } else {
+                    addCombatLog(`${currentEnemy.name} attacks for ${damage} damage!`, 'damage');
+                }
+
+                gameState.player.health -= damage;
+                document.getElementById('playerSprite').classList.add('shake');
+                setTimeout(() => {
+                    document.getElementById('playerSprite').classList.remove('shake');
+                }, 500);
+
+                updateHealthBars();
+
+                if (gameState.player.specialCooldown > 0) {
+                    gameState.player.specialCooldown--;
+                }
+
+                if (!checkCombatEnd()) {
+                    combatTurn = 'player';
+                }
+            }, 1000);
+        }
+
+        function checkCombatEnd() {
+            if (currentEnemy.health <= 0) {
+                victory();
+                return true;
+            }
+
+            if (gameState.player.health <= 0) {
+                defeat();
+                return true;
+            }
+
+            return false;
+        }
+
+        function victory() {
+            addCombatLog(`${currentEnemy.name} defeated!`, 'special');
+
+            gameState.player.xp += currentEnemy.xpReward;
+            gameState.enemiesDefeated++;
+
+            // Level up check
+            while (gameState.player.xp >= gameState.player.xpToNext) {
+                levelUp();
+            }
+
+            // Loot
+            if (currentEnemy.lootTable) {
+                currentEnemy.lootTable.forEach(loot => {
+                    if (Math.random() < loot.chance) {
+                        const existing = gameState.inventory.find(i => i.name === loot.name);
+                        if (existing) {
+                            existing.count++;
+                        } else {
+                            gameState.inventory.push({...loot, count: 1});
+                        }
+                        addCombatLog(`Found: ${loot.icon} ${loot.name}!`, 'heal');
+                    }
+                });
+            }
+
+            setTimeout(() => {
+                endCombat(true);
+            }, 2000);
+        }
+
+        function defeat() {
+            document.getElementById('combatScreen').classList.remove('active');
+            document.getElementById('resultScreen').classList.add('active');
+            document.getElementById('resultTitle').textContent = 'Defeated';
+            document.getElementById('resultTitle').className = 'result-title defeat';
+            document.getElementById('resultText').textContent = 'The darkness has claimed you... But the quest must continue!';
+
+            const continueBtn = document.querySelector('#resultScreen .menu-btn');
+            continueBtn.textContent = 'Try Again';
+            continueBtn.onclick = () => {
+                gameState.player.health = gameState.player.maxHealth;
+                loadGame();
+            };
+        }
+
+        function endCombat(won) {
+            document.getElementById('combatScreen').classList.remove('active');
+
+            if (won) {
+                // Move to next story beat
+                gameState.currentStoryBeat++;
+
+                // Check if chapter is complete
+                if (gameState.currentStoryBeat >= storyChapters[gameState.currentChapter].beats.length) {
+                    gameState.currentChapter++;
+                    gameState.currentStoryBeat = 0;
+
+                    if (gameState.currentChapter >= storyChapters.length) {
+                        showEndScreen();
+                        return;
+                    }
+                }
+
+                showStory();
+            }
+        }
+
+        function continueAfterCombat() {
+            document.getElementById('resultScreen').classList.remove('active');
+            endCombat(true);
+        }
+
+        function levelUp() {
+            gameState.player.level++;
+            gameState.player.xp -= gameState.player.xpToNext;
+            gameState.player.xpToNext = Math.floor(gameState.player.xpToNext * 1.5);
+
+            gameState.player.maxHealth += 20;
+            gameState.player.health = gameState.player.maxHealth;
+            gameState.player.attack += 3;
+            gameState.player.defense += 2;
+
+            addCombatLog(`⭐ LEVEL UP! Now level ${gameState.player.level}!`, 'heal');
+            updateUI();
+        }
+
+        function addCombatLog(message, type = '') {
+            const log = document.getElementById('combatLog');
+            const entry = document.createElement('div');
+            entry.className = `log-entry log-${type}`;
+            entry.textContent = message;
+            log.appendChild(entry);
+            log.scrollTop = log.scrollHeight;
+        }
+
+        // UI Updates
+        function updateUI() {
+            document.getElementById('charName').textContent = gameState.player.name;
+            document.getElementById('charLevel').textContent = gameState.player.level;
+            document.getElementById('charXP').textContent = `${gameState.player.xp} / ${gameState.player.xpToNext}`;
+            document.getElementById('charAttack').textContent = gameState.player.attack;
+            document.getElementById('charDefense').textContent = gameState.player.defense;
+            document.getElementById('currentChapter').textContent = gameState.currentChapter + 1;
+
+            updateInventoryDisplay();
+        }
+
+        function updateInventoryDisplay() {
+            const invList = document.getElementById('inventoryList');
+            invList.innerHTML = '';
+
+            gameState.inventory.forEach(item => {
+                if (item.count > 0) {
+                    const div = document.createElement('div');
+                    div.className = 'inventory-item';
+                    div.textContent = `${item.icon} ${item.name}${item.count > 1 ? ' x' + item.count : ''}`;
+                    invList.appendChild(div);
+                }
+            });
+        }
+    </script>
+</body>
+</html>
